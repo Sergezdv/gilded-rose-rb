@@ -5,49 +5,48 @@ class GildedRose
 
   def update_quality()
     @items.each do |item|
-      if item.name != 'Aged Brie' and item.name != 'Backstage passes to a TAFKAL80ETC concert'
-        if item.quality > 0
-          if item.name != 'Sulfuras, Hand of Ragnaros'
-            item.quality = item.quality - 1
-          end
-        end
+      sell_in_decrease!(item)
+      quality_step = item.sell_in < 0 ? 2 : 1
+      case item.name
+      when /^Sulfuras/
+        # print "Sulfuras, being a legendary item, never has to be sold or decreases in Quality"
+      when 'Aged Brie'
+        item.quality += 1 # = [item.quality + 1, 50].min
+      when /^Backstage passes/
+        set_backstage_quality!(item)
+      when /^Conjured/
+        item.quality -= quality_step*2
       else
-        if item.quality < 50
-          item.quality = item.quality + 1
-          if item.name == 'Backstage passes to a TAFKAL80ETC concert'
-            if item.sell_in < 11
-              if item.quality < 50
-                item.quality = item.quality + 1
-              end
-            end
-            if item.sell_in < 6
-              if item.quality < 50
-                item.quality = item.quality + 1
-              end
-            end
-          end
-        end
+        item.quality -= quality_step
       end
-      if item.name != 'Sulfuras, Hand of Ragnaros'
-        item.sell_in = item.sell_in - 1
-      end
-      if item.sell_in < 0
-        if item.name != 'Aged Brie'
-          if item.name != 'Backstage passes to a TAFKAL80ETC concert'
-            if item.quality > 0
-              if item.name != 'Sulfuras, Hand of Ragnaros'
-                item.quality = item.quality - 1
-              end
-            end
-          else
-            item.quality = item.quality - item.quality
-          end
-        else
-          if item.quality < 50
-            item.quality = item.quality + 1
-          end
-        end
-      end
+      check_quality!(item)
+    end
+  end
+
+  private
+
+  def sell_in_decrease!(item)
+    item.sell_in -= 1 unless item.name =~ /^Sulfuras/
+  end
+
+  def set_backstage_quality!(item)
+    if item.sell_in < 0
+      item.quality = 0
+    else
+      quality_step = 1
+      quality_step = 2 if item.sell_in < 10 #.in?(6..10)
+      quality_step = 3 if item.sell_in < 5 #.in?(0..5)
+      item.quality = [item.quality + quality_step, 50].min
+    end
+  end
+
+  def check_quality!(item)
+    if item.name =~ /^Sulfuras/
+      # item.quality = 80
+    elsif item.quality > 50
+      item.quality = 50
+    elsif item.quality < 0
+      item.quality = 0
     end
   end
 end
